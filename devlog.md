@@ -22,3 +22,17 @@ I want to start with the simplest program and work my way up:
 3. Start sketching out `driver.py` — the subprocess spawning and pipe setup
 
 My goal is to at least have the logger and encryption program working standalone by the end of this session.
+
+### Session Notes — Logger Implementation
+
+Started with `logger.py`. The required log format is `YYYY-MM-DD HH:MM [ACTION] MESSAGE`.
+
+My approach:
+- The program takes one command line argument: the log file name
+- It reads lines from stdin in a loop
+- Each line is parsed by splitting on whitespace — the first word becomes the ACTION, everything after becomes the MESSAGE
+- I use Python's `datetime.now().strftime("%Y-%m-%d %H:%M")` for the timestamp
+- The formatted entry is written to the file and flushed immediately (important so entries appear in real time, not buffered)
+- The loop breaks when it receives "QUIT"
+
+I opened the file in append mode ("a") so that multiple runs don't overwrite previous logs. Tested it manually by piping some echo commands into it and checking the output file — looks correct.
