@@ -64,3 +64,47 @@ Verified against the spec's example:
   - Result: OIWWC — matches the spec!
 
 One important detail: I use `flush=True` in every `print()` call. Without this, Python might buffer the output and the driver wouldn't receive responses in time through the pipe. This cost me about 15 minutes of debugging before I realized why my test wasn't getting output.
+
+### Session Notes — Driver Program Implementation
+
+This is the most complex part. The driver needs to:
+1. Spawn `logger.py` and `encrypt.py` as child processes
+2. Connect to their stdin/stdout via pipes
+3. Present an interactive menu to the user
+4. Maintain a history of strings
+
+**Subprocess setup:** I used `subprocess.Popen` with `stdin=subprocess.PIPE` and `stdout=subprocess.PIPE` (for the encryption program) and `text=True` for automatic string encoding. The logger only needs stdin (it writes to a file, not stdout). The encryption program needs both stdin and stdout pipes since we send commands and read responses.
+
+**Finding the scripts:** I used `os.path.dirname(os.path.abspath(__file__))` to find the directory where `driver.py` lives. This way, it can locate `logger.py` and `encrypt.py` regardless of what directory the user runs the command from.
+
+**Helper functions I created:**
+- `send_to_process()` — writes a line to a subprocess's stdin and flushes
+- `read_from_process()` — reads a line from a subprocess's stdout
+- `log_message()` — convenience wrapper to send formatted log messages
+- `get_string_from_user()` — handles the "new string or history?" menu for encrypt/decrypt
+- `get_password_from_user()` — similar menu but passwords don't go into history
+- `validate_alpha()` — checks input contains only letters using `str.isalpha()`
+
+**Important design decisions:**
+- The spec says "password" is used by the driver and "passkey" is used by the encryption program. So when the user types "password", the driver sends "PASS" to encrypt.py.
+- Passwords are NOT stored in the history (per spec).
+- Encrypted/decrypted results ARE stored in the history.
+- Input is converted to uppercase before sending to the encryption program.
+- The driver validates input before sending — only letters allowed, no spaces or special characters.
+
+**The menu loop:** Each iteration prints the menu, reads a command, and dispatches to the appropriate handler. Every command and its result gets logged. On "quit", the driver sends QUIT to both child processes and waits for them to finish with `.wait()`.
+
+### End of Session 1 Reflection
+
+I accomplished my main goal — all three programs are implemented. The logger and encrypt programs work standalone when tested manually. The driver compiles and runs, spawning both children correctly.
+
+Things that went well:
+- The Vigenère cipher was straightforward to implement
+- Python's subprocess module made pipe management clean
+- The modular design with helper functions keeps driver.py readable
+
+Things I need to do next session:
+- Full integration testing (run the whole system end-to-end)
+- Test edge cases (empty history, no password, invalid characters)
+- Verify the log file output format is exactly right
+- Make sure the quit sequence is clean (no zombie processes)
