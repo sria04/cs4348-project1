@@ -166,3 +166,9 @@ Everything works as expected. All the edge cases I tested pass. The pipe communi
 The project is functionally complete. I still need to write the README for submission. Looking back, the hardest part was getting the pipe communication right (the flush issue in encrypt.py) and making sure the history logic matched the spec exactly (passwords not stored, results stored, cancel option available).
 
 Overall I'm happy with how the code turned out. The separation into three programs with clean interfaces makes it easy to test each piece independently, which is exactly what IPC is about.
+
+### Final Session — README and Submission Prep
+
+Added a README.md describing all the files, how to run the program (`python3 driver.py <logfile>`), and notes for the TA. Double-checked that no external libraries are used — everything is from Python's standard library (sys, subprocess, os, datetime).
+
+Verified `git status` shows a clean working tree. Project is ready for submission.
