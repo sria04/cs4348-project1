@@ -108,3 +108,61 @@ Things I need to do next session:
 - Test edge cases (empty history, no password, invalid characters)
 - Verify the log file output format is exactly right
 - Make sure the quit sequence is clean (no zombie processes)
+
+### Thoughts So Far
+Had some time to think about potential issues since last session. One thing I want to verify is that the history behaves correctly — new strings entered for encrypt/decrypt get added, results get added, but passwords never do. Also want to make sure the "cancel" option works when browsing history.
+
+### Plan for This Session
+1. Run a full end-to-end test of the system
+2. Test all the edge cases I can think of
+3. Verify log file format matches the spec exactly
+4. Clean up any issues found
+
+### Session Notes — Integration Testing
+
+Ran `python3 driver.py test.log` and tested the full workflow:
+
+**Test 1: Basic encrypt flow**
+- Entered "password" → chose "new" → typed "HELLO" → "Password set successfully"
+- Entered "encrypt" → chose "new" → typed "HELLO" → got "OIWWC"
+- Entered "history" → shows [1. HELLO, 2. OIWWC]
+
+**Test 2: Decrypt round-trip**
+- Entered "decrypt" → chose "history" → selected "OIWWC" → got "HELLO"
+- History now has [1. HELLO, 2. OIWWC, 3. HELLO]
+
+**Test 3: No password error**
+- Started a fresh run, immediately tried "encrypt" with "TEST" → "ERROR: Password not set"
+
+**Test 4: Invalid input**
+- Tried to encrypt "Hello World!" → "Error: Input must contain only letters"
+- Tried password "abc123" → same error
+- Tried encrypt "Hello" → works fine, converted to uppercase
+
+**Test 5: Case insensitivity**
+- Set password "hello", encrypted "HELLO" → got same result as password "HELLO" encrypt "HELLO"
+
+**Test 6: Quit sequence**
+- Entered "quit" → "Goodbye!" printed, both child processes terminated cleanly
+- No zombie processes left (checked with `ps`)
+
+**Log file verification:**
+Opened `test.log` after the run. Entries look like:
+```
+2025-02-21 14:05 [START] Driver program started.
+2025-02-21 14:05 [COMMAND] password
+2025-02-21 14:05 [RESULT] Password set successfully
+2025-02-21 14:06 [COMMAND] encrypt
+2025-02-21 14:06 [RESULT] Encrypted text: OIWWC
+```
+Format matches the spec: `YYYY-MM-DD HH:MM [ACTION] MESSAGE`
+
+All tests pass. The system works correctly end-to-end.
+
+### End of Session 2 Reflection
+
+Everything works as expected. All the edge cases I tested pass. The pipe communication between the three processes is solid — no hangs, no buffering issues, no zombie processes.
+
+The project is functionally complete. I still need to write the README for submission. Looking back, the hardest part was getting the pipe communication right (the flush issue in encrypt.py) and making sure the history logic matched the spec exactly (passwords not stored, results stored, cancel option available).
+
+Overall I'm happy with how the code turned out. The separation into three programs with clean interfaces makes it easy to test each piece independently, which is exactly what IPC is about.
