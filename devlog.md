@@ -36,3 +36,31 @@ My approach:
 - The loop breaks when it receives "QUIT"
 
 I opened the file in append mode ("a") so that multiple runs don't overwrite previous logs. Tested it manually by piping some echo commands into it and checking the output file — looks correct.
+
+### Session Notes — Encryption Program Implementation
+
+Moved on to `encrypt.py`. This program needs to:
+- Read commands from stdin (PASS, ENCRYPT, DECRYPT, QUIT)
+- Remember the current passkey between commands
+- Output responses prefixed with RESULT or ERROR
+
+For the Vigenère cipher itself, I wrote two functions:
+- `vigenere_encrypt(plaintext, key)`: For each character, compute `(P + K) mod 26`
+- `vigenere_decrypt(ciphertext, key)`: For each character, compute `(C - K) mod 26`
+
+The key repeats cyclically using modulo on the index: `key[i % key_len]`.
+
+I decided to handle everything in uppercase internally since the spec says we can assume one case. Both the passkey and the text are converted to uppercase with `.upper()` before processing.
+
+Verified against the spec's example:
+- ENCRYPT HELLO with no password → ERROR Password not set
+- PASS HELLO → RESULT
+- ENCRYPT HELLO with key HELLO:
+  - H(7)+H(7)=14=O
+  - E(4)+E(4)=8=I
+  - L(11)+L(11)=22=W
+  - L(11)+L(11)=22=W
+  - O(14)+O(14)=28 mod 26=2=C
+  - Result: OIWWC — matches the spec!
+
+One important detail: I use `flush=True` in every `print()` call. Without this, Python might buffer the output and the driver wouldn't receive responses in time through the pipe. This cost me about 15 minutes of debugging before I realized why my test wasn't getting output.
